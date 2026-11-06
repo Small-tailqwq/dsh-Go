@@ -117,7 +117,8 @@ Future<T?> showAppSheet<T>(
               child: Material(type: MaterialType.transparency, child: content),
             )
           : content;
-      return holds == null ? surface() : _HeldSheetDrag(holds: holds, builder: surface);
+      final sheet = holds == null ? surface() : _HeldSheetDrag(holds: holds, builder: surface);
+      return draggable ? _ScrollPullDismiss(child: sheet) : sheet;
     }),
   );
 }
@@ -262,6 +263,89 @@ class _HeldSheetDragState extends State<_HeldSheetDrag> with SingleTickerProvide
       animation: _offset,
       builder: (context, child) => Transform.translate(offset: Offset(0, _offset.value), child: child),
       child: widget.builder(_offset),
+    ),
+  );
+}
+
+/// A draggable sheet whose content scrolls: pulling on from the top of that
+/// list takes the sheet down with the finger, as dragging its handle does.
+///
+/// `BottomSheet`'s own drag never sees a gesture an inner list has won, so
+/// without this a long sheet only closes from its handle. Only the outermost
+/// vertical list counts. Closing asks the route with `maybePop`, so a
+/// [SheetDragHolds] guard still gets its say.
+class _ScrollPullDismiss extends StatefulWidget {
+  const _ScrollPullDismiss({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_ScrollPullDismiss> createState() => _ScrollPullDismissState();
+}
+
+class _ScrollPullDismissState extends State<_ScrollPullDismiss> with SingleTickerProviderStateMixin {
+  // BottomSheet's own thresholds.
+  static const _flingVelocity = 700.0;
+  static const _closeFraction = 0.5;
+
+  late final AnimationController _offset = AnimationController.unbounded(vsync: this);
+
+  @override
+  void dispose() {
+    _offset.dispose();
+    super.dispose();
+  }
+
+  bool _onScroll(ScrollNotification notification) {
+    if (notification.depth != 0 || notification.metrics.axis != Axis.vertical) return false;
+    switch (notification) {
+      case OverscrollNotification(:final overscroll, :final dragDetails?) when overscroll < 0 || _offset.value > 0:
+        _follow(-overscroll, dragDetails);
+      case ScrollUpdateNotification(:final scrollDelta?, :final dragDetails?) when _offset.value > 0:
+        _follow(-scrollDelta, dragDetails);
+      case ScrollEndNotification(:final dragDetails):
+        if (_offset.value > 0) _end(dragDetails?.primaryVelocity ?? 0);
+      default:
+        break;
+    }
+    return false;
+  }
+
+  void _follow(double delta, DragUpdateDetails _) {
+    if (_offset.isAnimating) _offset.stop();
+    _offset.value = math.max(0, _offset.value + delta);
+  }
+
+  /// [velocity]: pixels a second, downwards.
+  void _end(double velocity) {
+    final height = context.size?.height ?? double.infinity;
+    if (velocity > _flingVelocity || _offset.value > height * _closeFraction) {
+      // The route slides the sheet out from where the finger left it; only a
+      // refused close (a guard said no) brings it back.
+      unawaited(Navigator.of(context).maybePop().then((closed) {
+        if (!closed && mounted) _settle(0);
+      }));
+    } else {
+      _settle(velocity);
+    }
+  }
+
+  void _settle(double velocity) {
+    if (AppMotion.reduced(context)) {
+      _offset.value = 0;
+      return;
+    }
+    final height = context.size?.height ?? MediaQuery.sizeOf(context).height;
+    unawaited(_offset.animateWith(AppMotion.settle(AppMotion.sheetSpring, _offset.value, 0, velocity, extent: height)));
+  }
+
+  @override
+  Widget build(BuildContext context) => NotificationListener<ScrollNotification>(
+    onNotification: _onScroll,
+    child: AnimatedBuilder(
+      animation: _offset,
+      builder: (context, child) => Transform.translate(offset: Offset(0, _offset.value), child: child),
+      child: widget.child,
     ),
   );
 }

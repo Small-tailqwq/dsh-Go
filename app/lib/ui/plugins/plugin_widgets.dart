@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dsh_client/dsh_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../l10n/l10n.dart';
 import '../../state/plugins_state.dart';
@@ -13,7 +14,7 @@ import '../common/display_image.dart';
 
 /// Plugin icon, app-store style: a rounded square (continuous corners, about
 /// a quarter of the side) holding a lazily loaded https image or an inline
-/// PNG/JPEG/WebP data URL; anything else (SVG, failures, while loading) shows
+/// PNG/JPEG/WebP/SVG data URL; anything else (failures, while loading) shows
 /// the first letter on an identity-tinted square.
 class PluginAvatar extends StatelessWidget {
   const PluginAvatar({super.key, required this.name, this.title, this.icon, this.size = 40});
@@ -25,6 +26,18 @@ class PluginAvatar extends StatelessWidget {
   final double size;
 
   static final Map<String, Uint8List?> _decoded = {};
+  static final Map<String, String?> _svgs = {};
+
+  /// An SVG data URL's markup. The Host reads plugin icons from the plugin's
+  /// own files and caps them at 256 KiB; SVG is drawn as vectors, never run.
+  static String? _svg(String dataUrl) => _svgs.putIfAbsent(dataUrl, () {
+    if (!dataUrl.startsWith('data:image/svg+xml')) return null;
+    try {
+      return UriData.parse(dataUrl).contentAsString(encoding: utf8);
+    } on FormatException {
+      return null;
+    }
+  });
 
   static Uint8List? _bytes(String dataUrl) => _decoded.putIfAbsent(dataUrl, () {
     if (!RegExp(r'^data:image/(?:png|jpeg|webp);base64,').hasMatch(dataUrl)) {
@@ -63,7 +76,17 @@ class PluginAvatar extends StatelessWidget {
     Widget? image;
     if (source != null && source.startsWith('data:')) {
       final bytes = _bytes(source);
-      if (bytes != null) {
+      final svg = bytes == null ? _svg(source) : null;
+      if (svg != null) {
+        image = SvgPicture.string(
+          svg,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          placeholderBuilder: (_) => fallback,
+          errorBuilder: (_, _, _) => fallback,
+        );
+      } else if (bytes != null) {
         image = Image(
           image: displayed(MemoryImage(bytes)),
           width: size,

@@ -31,11 +31,16 @@ import 'seats/plugin_web_places.dart';
 
 /// Market entry detail and the install confirmation: what it is, where it
 /// comes from, the trust warning, live progress and the one primary action.
+///
+/// Plugin sheets close like a card: a drag down or a tap above them. Nothing
+/// here is unsaved input, and an install keeps running in
+/// [PluginInstallsController] after the sheet is gone.
 Future<void> showMarketPluginSheet(BuildContext context, MarketEntry entry) {
   final ownerRoute = ModalRoute.of(context);
   return showAppSheet<void>(
     context,
     heightFactor: 0.88,
+    dismissal: SheetDismissal.drag,
     builder: (_) => SheetNavigator(
       root: (_) => MarketPluginSheet(entry: entry, ownerRoute: ownerRoute),
     ),
@@ -48,6 +53,7 @@ Future<void> showBundleSheet(BuildContext context, PluginBundle bundle) {
   return showAppSheet<void>(
     context,
     heightFactor: 0.75,
+    dismissal: SheetDismissal.drag,
     builder: (_) => BundleSheet(name: bundle.name, initial: bundle, ownerRoute: ownerRoute),
   );
 }
