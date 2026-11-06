@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Cleartext only for the local DSH server on loopback; everything else stays HTTPS-only. -->
+<!-- This policy binds the platform HTTP stacks (WebView, Java/Kotlin clients). dart:io sockets do
+     not consult it: the Local Direct ws:// link to a paired LAN host (packages/dsh_remote,
+     LocalTransport) needs no entry here, and is encrypted end to end by Noise. -->
 <network-security-config>
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="false">127.0.0.1</domain>

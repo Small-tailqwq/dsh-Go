@@ -14233,6 +14233,90 @@ class L10nEn extends L10n {
   String get searchKwRemoteCompactHistory => 'compact slim lite history tools transfer bandwidth remote';
 
   @override
+  String get remoteLanHosts => 'LAN hosts';
+
+  @override
+  String get remoteLanFooter =>
+      'Connects directly on the same Wi-Fi or a WireGuard / Tailscale network, through no server';
+
+  @override
+  String get remoteLanAdd => 'Pair a LAN host';
+
+  @override
+  String get remoteLanPairHelp =>
+      'Run ds-harness-remote local pair on the computer, then scan the QR code with the phone camera or paste the pairing link here';
+
+  @override
+  String get remoteLanPairLinkLabel => 'Pairing link';
+
+  @override
+  String get remoteLanPair => 'Pair';
+
+  @override
+  String remoteLanPaired(String name) {
+    return 'Paired with “$name”';
+  }
+
+  @override
+  String get remoteLanAddresses => 'Addresses';
+
+  @override
+  String get remoteLanAddressesHint => 'One per line, e.g. 192.168.1.10:47821';
+
+  @override
+  String get remoteLanForget => 'Remove';
+
+  @override
+  String remoteLanForgetTitle(String name) {
+    return 'Remove “$name”?';
+  }
+
+  @override
+  String get remoteLanForgetBody =>
+      'Using it again needs a new pairing. Revoke this phone on the computer with ds-harness-remote local revoke.';
+
+  @override
+  String get remoteLanErrInvalidLink => 'Not a valid pairing link';
+
+  @override
+  String get remoteLanErrPairingClosed => 'Pairing on the computer has expired; run local pair again';
+
+  @override
+  String get remoteLanErrPairingRejected => 'The pairing code is wrong or already used; make a new one on the computer';
+
+  @override
+  String get remoteLanErrNotPaired => 'The computer revoked this phone\'s pairing; pair again';
+
+  @override
+  String get remoteLanErrIdentityChanged => 'The computer\'s identity key differs from the one paired with';
+
+  @override
+  String get remoteLanErrUnreachable =>
+      'Can\'t reach the computer: check that both are on the same network and LAN direct is on';
+
+  @override
+  String get remoteLanErrAddress => 'Use a private-network IP, e.g. 192.168.1.10:47821';
+
+  @override
+  String get remotePathLocalDirect => 'LAN direct';
+
+  @override
+  String stateHostLanLabel(String name) {
+    return '$name · LAN';
+  }
+
+  @override
+  String get searchKwPairLanHost => 'lan,pair,qr code,scan,direct,wireguard,tailscale';
+
+  @override
+  String remoteLanFingerprint(String fingerprint) {
+    return 'Fingerprint $fingerprint';
+  }
+
+  @override
+  String get remoteLanCheckFingerprint => 'Pair only if this matches the fingerprint local pair shows on the computer';
+
+  @override
   String get stateWorkspaceFilesHint => 'Files uploaded to the current workspace:';
 
   @override

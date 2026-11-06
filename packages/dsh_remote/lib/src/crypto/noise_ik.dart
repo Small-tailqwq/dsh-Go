@@ -283,6 +283,7 @@ class NoiseIkSession {
   int _messageIndex = 0;
   _CipherState? _send;
   _CipherState? _receive;
+  Uint8List? _handshakeHash;
   bool _destroyed = false;
 
   String get protocol => noiseIkProtocol;
@@ -411,6 +412,17 @@ class NoiseIkSession {
   /// Nonce the next received message must carry.
   int get receivingCounter => _receive?.nonce ?? 0;
 
+  /// Noise handshake hash `h`, identical on both peers once the handshake
+  /// completes (Local Direct binds its pairing proof to it).
+  Uint8List get handshakeHash {
+    _assertLive();
+    final hash = _handshakeHash;
+    if (hash == null) {
+      throw const NoiseSessionError('NOISE_NOT_READY', 'The Noise handshake is not complete.');
+    }
+    return Uint8List.fromList(hash);
+  }
+
   /// Remote static key learned or confirmed by the handshake.
   Uint8List? get remoteStatic => _remoteStatic == null ? null : Uint8List.fromList(_remoteStatic!);
 
@@ -426,11 +438,14 @@ class NoiseIkSession {
     _receive?.destroy();
     _send = null;
     _receive = null;
+    _handshakeHash?.fillRange(0, _handshakeHash!.length, 0);
+    _handshakeHash = null;
   }
 
   void _finishIfReady() {
     if (_messageIndex < 2) return;
     _verifyRemoteStatic(_remoteStatic);
+    _handshakeHash = Uint8List.fromList(_symmetric._h);
     final (c1, c2) = _symmetric.split();
     if (role == NoiseRole.initiator) {
       _send = c1;
@@ -493,6 +508,26 @@ Uint8List createNoisePrologue(String connectionId, String hostDeviceId, String c
   return Uint8List.fromList(
     utf8.encode(
       'DSH-REMOTE\u0000v=1\u0000connection=$connectionId\u0000host=$hostDeviceId\u0000client=$clientDeviceId',
+    ),
+  );
+}
+
+/// UTF-8 `DSH-REMOTE-LOCAL\0v=1\0connection=<id>\0host=<id>\0client=<id>`:
+/// the Local Direct prologue. Its distinct label keeps a Local Direct
+/// handshake from being accepted on an account connection, and vice versa.
+Uint8List createLocalNoisePrologue(String connectionId, String hostDeviceId, String clientDeviceId) {
+  for (final (name, value) in [
+    ('connectionId', connectionId),
+    ('hostDeviceId', hostDeviceId),
+    ('clientDeviceId', clientDeviceId),
+  ]) {
+    if (value.isEmpty || value.contains('\u0000')) {
+      throw ArgumentError.value(value, name, 'is not safe for a Noise prologue');
+    }
+  }
+  return Uint8List.fromList(
+    utf8.encode(
+      'DSH-REMOTE-LOCAL\u0000v=1\u0000connection=$connectionId\u0000host=$hostDeviceId\u0000client=$clientDeviceId',
     ),
   );
 }

@@ -4,6 +4,7 @@ import 'package:dsh_client/dsh_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/l10n.dart';
+import '../remote/lan/lan_backend.dart';
 import '../remote/link_status.dart';
 import '../remote/network_watch.dart';
 import '../remote/relay/relay_backend.dart';
@@ -222,6 +223,21 @@ final hostLinkProvider = Provider.autoDispose.family<HostLink?, HostRef>((ref, h
         unawaited(link.close());
       });
       return link;
+    case HostKind.lan:
+      final backend = ref.watch(lanBackendProvider);
+      final link = RelayHostLink(
+        backend: backend,
+        hostId: host.id,
+        resolveHost: () async {
+          for (final h in await backend.pairedHosts()) {
+            if (h.hostDeviceId == host.id) return LanBackend.host(h);
+          }
+          return null;
+        },
+        kicks: ref.read(networkKicksProvider),
+      );
+      ref.onDispose(() => unawaited(link.close()));
+      return link;
   }
 });
 
@@ -242,6 +258,16 @@ final hostNameProvider = Provider.autoDispose.family<String?, HostRef>((ref, hos
     HostKind.local => appL10n.commonThisPhone,
     HostKind.ssh => ref.watch(hostsProvider.select((s) => s.sshById(host.id)?.name)),
     HostKind.relay => ref.watch(relayAccountProvider.select((a) => a.value?.hostById(host.id)?.name)) ?? host.name,
+    HostKind.lan =>
+      ref.watch(
+            lanHostsProvider.select((a) {
+              for (final h in a.value ?? const <LocalPairedHost>[]) {
+                if (h.hostDeviceId == host.id) return h.name;
+              }
+              return null;
+            }),
+          ) ??
+          host.name,
   };
 });
 
@@ -421,7 +447,7 @@ AsyncValue<HostConnection?> _connectionForHost(Ref ref, HostRef host) {
       final loaded = ref.watch(hostsProvider.select((s) => s.loaded));
       if (!loaded) return const AsyncLoading();
       return ref.watch(remoteConnectionProvider(host));
-    case HostKind.relay:
+    case HostKind.relay || HostKind.lan:
       return ref.watch(remoteConnectionProvider(host));
   }
 }

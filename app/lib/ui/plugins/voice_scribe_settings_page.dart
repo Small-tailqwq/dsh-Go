@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/l10n.dart';
 import '../../state/connection_state.dart';
-import '../../state/hosts_state.dart';
 import '../../state/voice_scribe_settings.dart';
 import '../engine_settings/field_row.dart';
 import '../engine_settings/field_sheets.dart';
@@ -76,7 +75,7 @@ class _VoiceScribeSettingsPageState extends ConsumerState<VoiceScribeSettingsPag
         if (state != DshConnectionState.connected) _controller.invalidate();
       }),
     );
-    if (client.carrier is DshHttpCarrier && widget.source.kind != HostKind.relay) unawaited(_controller.refresh());
+    if (client.carrier is DshHttpCarrier && !widget.source.kind.viaRemoteTunnel) unawaited(_controller.refresh());
   }
 
   @override
@@ -120,7 +119,7 @@ class _VoiceScribeSettingsPageState extends ConsumerState<VoiceScribeSettingsPag
           title: voiceScribePageTitle,
           subtitle: Text(widget.source.label),
           actions: [
-            if (widget.source.kind != HostKind.relay && widget.source.client.carrier is DshHttpCarrier)
+            if (!widget.source.kind.viaRemoteTunnel && widget.source.client.carrier is DshHttpCarrier)
               IconButton(
                 tooltip: appL10n.voiceScribeRefresh,
                 icon: const Icon(AppIcons.refresh),
@@ -130,7 +129,7 @@ class _VoiceScribeSettingsPageState extends ConsumerState<VoiceScribeSettingsPag
           children: [
             if (!_current())
               FeatureMessage(icon: AppIcons.disconnected, title: appL10n.voiceScribeHostChanged)
-            else if (widget.source.kind == HostKind.relay)
+            else if (widget.source.kind.viaRemoteTunnel)
               FeatureMessage(icon: AppIcons.unsupported, title: voiceScribePageTitle, body: l10n.webRelayUnavailable)
             else if (widget.source.client.carrier is! DshHttpCarrier)
               FeatureMessage(

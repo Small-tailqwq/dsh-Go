@@ -1,0 +1,46 @@
+{
+  "fixtureFormat": "dsh-remote.local-noise-vectors",
+  "fixtureFormatVersion": 1,
+  "protocolVersion": 1,
+  "suite": "Noise_IK_25519_ChaChaPoly_SHA256",
+  "encoding": "base64url-no-padding",
+  "vectors": [
+    {
+      "name": "local-direct-v1-deterministic",
+      "staticKeys": {
+        "initiator": {
+          "privateKey": "gIGCg4SFhoeIiYqLjI2Oj5CRkpOUlZaXmJmam5ydnp8",
+          "publicKey": "ST6C_HRGSlkmiBdiPSBTxeuOLMSpiLT-4XnsawENUx0"
+        },
+        "responder": {
+          "privateKey": "oKGio6SlpqeoqaqrrK2ur7CxsrO0tba3uLm6u7y9vr8",
+          "publicKey": "YFpyXSpK3-6xop4X7dYhwbdZPujNvESsbEq24vgF0jw"
+        }
+      },
+      "ephemeralPrivateKeys": {
+        "initiator": "EBESExQVFhcYGRobHB0eHyAhIiMkJSYnKCkqKywtLi8",
+        "responder": "MDEyMzQ1Njc4OTo7PD0-P0BBQkNERUZHSElKS0xNTk8"
+      },
+      "prologue": {
+        "connectionId": "local-vector-connection",
+        "hostDeviceId": "local-vector-host",
+        "clientDeviceId": "local-vector-client",
+        "bytes": "RFNILVJFTU9URS1MT0NBTAB2PTEAY29ubmVjdGlvbj1sb2NhbC12ZWN0b3ItY29ubmVjdGlvbgBob3N0PWxvY2FsLXZlY3Rvci1ob3N0AGNsaWVudD1sb2NhbC12ZWN0b3ItY2xpZW50"
+      },
+      "handshake": {
+        "message1": "2J47rXlDfb7Z-ENBgwT0YP8Fx_6B_kqVd6gEy5Nn_2aojhbL4MoI75U2QBmdbV5Sn_tJ_CJfXJPAn4-ejHoN2R_gNmeoaw6gHKWZrFhnShXiYUWb8LN6D5MoxNcUiDHt",
+        "message2": "NOQtSvXvlKB6OoQgG4idTNGnQ8snsRtqEEOKj-uOWEf4XqyxxF36Xh2B7dCYYpm4"
+      },
+      "handshakeHash": "3odZcLb0ym4tr0BcGFx3usQJFB6JXZYAZVHrdiB3qio",
+      "transport": {
+        "sender": "initiator",
+        "plaintext": "eyJsb2NhbCI6InBpbmcifQ",
+        "ciphertext": "vtnSnxZSkCEG5OUeVPUtm7pJwG9aV6pfN-c7ALMgkcw"
+      },
+      "pairing": {
+        "code": "wMHCw8TFxsfIycrLzM3Ozw",
+        "proof": "lKoIKOyLRyv-596Gv5867TM8OhbuHx4tLF9aDAzDtso"
+      }
+    }
+  ]
+}

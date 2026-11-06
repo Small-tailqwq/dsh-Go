@@ -13,7 +13,6 @@ import '../carrier/tunnel_carrier.dart';
 import '../channel/rpc_client.dart';
 import '../channel/secure_channel.dart';
 import '../crypto/noise_ik.dart';
-import '../protocol/control.dart' show maxRemoteCapabilityEntries;
 import '../server/server_api.dart';
 import '../state.dart';
 import '../transport/peer_connection.dart';
@@ -21,6 +20,7 @@ import '../transport/relay_transport.dart';
 import '../transport/transport.dart';
 import '../transport/webrtc_transport.dart';
 import '../util/bytes.dart';
+import 'host_negotiation.dart';
 import 'secret_store.dart';
 
 /// The signed-in account on one Server.
@@ -325,7 +325,7 @@ class RemoteAccount {
   Future<void>? _restoring;
   Map<String, _Pin>? _pins;
   ({_Credentials owner, Future<String> result})? _refreshing;
-  _ActiveConnection? _active;
+  ActiveRemoteConnection? _active;
   final Map<String, DateTime> _directCooldown = {};
   final Map<String, DateTime> _turnCooldown = {};
   final Map<String, String> _networkHints = {};
@@ -459,7 +459,7 @@ class RemoteAccount {
 
     unawaited(
       poll().catchError((Object error) {
-        if (!completer.isCompleted) completer.completeError(_asConnectException(error));
+        if (!completer.isCompleted) completer.completeError(asRemoteConnectException(error));
       }),
     );
     return RemoteLogin._(session.scanUrl, provider.id, expiresAt, completer.future, () {
@@ -775,7 +775,7 @@ class RemoteAccount {
     Duration healthTimeout = const Duration(seconds: 10),
     DshTracer? tracer,
   }) async {
-    final historyMode = _HistoryMode(compactHistory);
+    final historyMode = RemoteHistoryMode(compactHistory);
     await _restore();
     final previous = _active;
     _active = null;
@@ -788,7 +788,7 @@ class RemoteAccount {
       tracer: tracer,
     );
     final client = DshClient.withCarrier(carrier, muxOptions: muxOptions);
-    final active = _ActiveConnection(client, carrier);
+    final active = ActiveRemoteConnection(client, carrier);
     _active = active;
     active.stateSub = carrier.states.listen((state) {
       onState?.call(state);
@@ -829,14 +829,14 @@ class RemoteAccount {
     RemoteHost host,
     RemoteFailure? previous,
     HostTrustPrompt? confirm,
-    _HistoryMode historyMode,
+    RemoteHistoryMode historyMode,
   ) async {
     try {
       return await _openHostSessionOnce(host, previous, confirm, historyMode);
     } on RemoteConnectException {
       rethrow;
     } on Object catch (error) {
-      throw _asConnectException(error);
+      throw asRemoteConnectException(error);
     }
   }
 
@@ -844,7 +844,7 @@ class RemoteAccount {
     RemoteHost host,
     RemoteFailure? previous,
     HostTrustPrompt? confirm,
-    _HistoryMode historyMode,
+    RemoteHistoryMode historyMode,
   ) async {
     final identity = _identity;
     if (identity == null || _credentials == null) {
@@ -916,67 +916,8 @@ class RemoteAccount {
       }),
     );
 
-    // 4. Capability probe: the first RPC must be harness.transport.describe.
-    var probingCapabilities = true;
-    try {
-      final description = asMap(
-        await rpc.call('harness.transport.describe', const <String, Object?>{}, timeout: const Duration(seconds: 10)),
-      );
-      probingCapabilities = false;
-      final raw = description?['capabilities'];
-      if (raw is! List ||
-          raw.length > maxRemoteCapabilityEntries ||
-          raw.any((c) => c is! String || c.isEmpty) ||
-          raw.toSet().length != raw.length) {
-        throw const RemoteConnectException(
-          RemoteFailure('INVALID_MESSAGE', 'The Host returned invalid transport capabilities.', retryable: false),
-        );
-      }
-      final capabilities = raw.cast<String>();
-      final v3 = capabilities.contains('harness.remote.v3');
-      final v1 = capabilities.contains('harness.remote.v1');
-      if (v3 && v1) {
-        throw const RemoteConnectException(
-          RemoteFailure(
-            'INVALID_MESSAGE',
-            'The Host advertised conflicting Harness Session formats.',
-            retryable: false,
-          ),
-        );
-      }
-      if (!v3) {
-        throw RemoteConnectException(
-          RemoteFailure(
-            'HARNESS_VERSION_INCOMPATIBLE',
-            v1
-                ? 'The Host runs a pre-0.1.5 DSH (Session format v1); this client needs DSH 0.2.x (Session V3).'
-                : 'The Host exposes no Typert Remote carrier (harness.remote.v3); update its ds-harness-remote plugin.',
-            retryable: false,
-          ),
-        );
-      }
-      final supportsCompact = capabilities.contains('remote.history.compact.v1');
-      final compact = historyMode.negotiated ?? (supportsCompact && historyMode.requested);
-      if (compact && !supportsCompact) {
-        throw const RemoteConnectException(
-          RemoteFailure(
-            'HISTORY_MODE_CHANGED',
-            'The Host no longer supports compact history; create a new client to load full history.',
-            retryable: false,
-          ),
-        );
-      }
-      if (supportsCompact) {
-        final result = asMap(
-          await rpc.call('remote.history.configure', {'compact': compact}, timeout: const Duration(seconds: 10)),
-        );
-        if (result == null || result.length != 1 || result['compact'] is! bool || result['compact'] != compact) {
-          throw const RemoteConnectException(
-            RemoteFailure('INVALID_MESSAGE', 'The Host returned an invalid history configuration.', retryable: false),
-          );
-        }
-      }
-      historyMode.negotiated = compact;
+    // 4. Capability probe and history mode (shared with Local Direct).
+    return negotiateRemoteHostSession(rpc, historyMode, (capabilities, workspaceTypes) {
       setup.stop();
       RemoteNetworkDiagnostics snapshot() => RemoteNetworkDiagnostics(
         transportMode: transport is WebRtcTransport ? transport.actualMode : transport.mode,
@@ -995,8 +936,8 @@ class RemoteAccount {
         // api.device was fetched and pin-checked for this exact opening.
         // Do not fall back to host.harnessVersion (a stale listing).
         harnessVersion: peer.harnessVersion,
-        capabilities: List.unmodifiable(capabilities),
-        workspaceTypes: description!['workspaceTypes'],
+        capabilities: capabilities,
+        workspaceTypes: workspaceTypes,
         transport: transport.mode.name,
         networkDiagnostics: snapshot(),
         inspectNetwork: () async {
@@ -1004,24 +945,7 @@ class RemoteAccount {
           return snapshot();
         },
       );
-    } on RemoteRpcException catch (error) {
-      await rpc.close();
-      if (probingCapabilities && error.code == 'METHOD_NOT_FOUND') {
-        throw const RemoteConnectException(
-          RemoteFailure(
-            'HARNESS_VERSION_INCOMPATIBLE',
-            'The Host plugin predates capability discovery (rc.2 ApiProxy only); update ds-harness-remote on the Host.',
-            retryable: false,
-          ),
-        );
-      }
-      throw RemoteConnectException(
-        RemoteFailure(error.code, error.message, retryable: error.retryable || error.isLocal),
-      );
-    } on Object {
-      await rpc.close();
-      rethrow;
-    }
+    });
   }
 
   /// Tries LAN/P2P without relay candidates, then TURN with relay-only ICE,
@@ -1195,66 +1119,8 @@ class RemoteAccount {
     } on RemoteConnectException {
       rethrow;
     } on Object catch (error) {
-      throw _asConnectException(error);
+      throw asRemoteConnectException(error);
     }
-  }
-}
-
-RemoteConnectException _asConnectException(Object error) => switch (error) {
-  RemoteConnectException() => error,
-  RemoteApiException(:final code, :final message, :final retryable) => RemoteConnectException(
-    RemoteFailure(code, message, retryable: retryable || code == 'CONNECTION_FAILED' || code == 'HOST_OFFLINE'),
-  ),
-  RemoteTransportException(:final code, :final message, :final retryable) => RemoteConnectException(
-    RemoteFailure(code, message, retryable: retryable && !_terminalCodes.contains(code)),
-  ),
-  SecureChannelException(:final code, :final message, :final retryable) => RemoteConnectException(
-    RemoteFailure(code, message, retryable: retryable && !_terminalCodes.contains(code)),
-  ),
-  RemoteRpcException(:final code, :final message) => RemoteConnectException(
-    RemoteFailure(code, message, retryable: true),
-  ),
-  NoiseSessionError(:final code, :final message) => RemoteConnectException(
-    RemoteFailure(code, message, retryable: false),
-  ),
-  ArgumentError() => RemoteConnectException(RemoteFailure('INVALID_ARGUMENT', '$error', retryable: false)),
-  _ => RemoteConnectException(RemoteFailure('CONNECTION_FAILED', '$error', retryable: true)),
-};
-
-const Set<String> _terminalCodes = {
-  'CONNECTION_REPLACED',
-  'CONNECTION_REJECTED',
-  'PEER_IDENTITY_MISMATCH',
-  'MEMBERSHIP_REQUIRED',
-  'DEVICE_REVOKED',
-  'DEVICE_NOT_FOUND',
-  'CAPABILITY_NOT_SUPPORTED',
-  'UNSUPPORTED_VERSION',
-  'ACCOUNT_AUTH_REQUIRED',
-};
-
-// A client's transcript cache must not mix compact and full baselines.
-class _HistoryMode {
-  _HistoryMode(this.requested);
-
-  final bool requested;
-  bool? negotiated;
-}
-
-class _ActiveConnection {
-  _ActiveConnection(this.client, this.carrier);
-
-  final DshClient client;
-  final RemoteTunnelCarrier carrier;
-  StreamSubscription<RemoteConnectionState>? stateSub;
-  bool _closed = false;
-
-  Future<void> close() async {
-    if (_closed) return;
-    _closed = true;
-    await client.close();
-    await Future<void>.delayed(Duration.zero);
-    await stateSub?.cancel();
   }
 }
 

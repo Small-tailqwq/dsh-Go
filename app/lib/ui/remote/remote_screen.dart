@@ -22,6 +22,7 @@ import '../theme/theme.dart';
 import '../web/web_view_page.dart';
 import 'host_key_dialog.dart';
 import 'host_status.dart';
+import 'lan_hosts.dart';
 import 'link_progress.dart';
 import 'network_details_sheet.dart';
 import 'relay_credit.dart';
@@ -89,6 +90,7 @@ class RemoteScreen extends ConsumerWidget {
     final ssh = ref.watch(hostsProvider.select((s) => s.ssh));
     final active = ref.watch(activeHostProvider);
     final signedIn = ref.watch(relayAccountProvider.select((a) => a.value?.signedIn ?? false));
+    final lanPaired = ref.watch(lanHostsProvider.select((a) => a.value?.isNotEmpty ?? false));
     void push(Widget page) => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
     return AppPage.list(
       title: l10n.commonRemoteHost,
@@ -129,6 +131,7 @@ class RemoteScreen extends ConsumerWidget {
             ),
           ],
         ),
+        LanHostsSection(onUse: (h) => _use(context, ref, h)),
         SettingsSection(
           title: l10n.remoteOtherMethods,
           children: [
@@ -142,7 +145,7 @@ class RemoteScreen extends ConsumerWidget {
           ],
         ),
         // Only meaningful once there is a host to come back to.
-        if (ssh.isNotEmpty || signedIn)
+        if (ssh.isNotEmpty || signedIn || lanPaired)
           SettingsSection(
             title: l10n.remoteStartupSection,
             children: [
@@ -191,7 +194,7 @@ class _ActiveCard extends ConsumerWidget {
       leading: OverviewGlyph(hostKindIcon(active.kind), tint: hostKindTint(active.kind)),
       title: Text(l10n.remoteActiveHost(name)),
       subtitle: InkWell(
-        onTap: active.kind == HostKind.relay && status.isConnected
+        onTap: active.kind.viaRemoteTunnel && status.isConnected
             ? () => showRemoteNetworkDetails(context, active)
             : null,
         child: Row(
@@ -201,7 +204,7 @@ class _ActiveCard extends ConsumerWidget {
             Flexible(
               child: Text(_statusLine(status, view, ssh?.address), maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
-            if (active.kind == HostKind.relay && status.isConnected) ...[
+            if (active.kind.viaRemoteTunnel && status.isConnected) ...[
               const SizedBox(width: 6),
               Tooltip(message: l10n.remoteNetworkDetails, child: const Icon(AppIcons.info, size: 16)),
             ],
@@ -243,7 +246,7 @@ class _ActiveCard extends ConsumerWidget {
                           }
                         },
                       )
-                    : (active.kind == HostKind.relay ? l10n.remoteReconnect : l10n.commonRetry, reconnect),
+                    : (active.kind.viaRemoteTunnel ? l10n.remoteReconnect : l10n.commonRetry, reconnect),
               ),
             )
           : null,

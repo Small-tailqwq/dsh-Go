@@ -33,7 +33,7 @@ class DshRemoteRelayBackend implements RelayBackend, RelayNetworkBackend {
        account =
            account ??
            remote.RemoteAccount(
-             secrets: _Secrets(secrets),
+             secrets: DshRemoteSecrets(secrets),
              serverUrl: serverUrl,
              deviceName: 'DSH App (Android)',
              platform: 'dsh-app-android',
@@ -385,8 +385,8 @@ class DshRemoteRelayBackend implements RelayBackend, RelayNetworkBackend {
 }
 
 /// dsh_remote's secret-store interface over the app's (Keystore-backed) one.
-class _Secrets implements remote.SecretStore {
-  _Secrets(this._inner);
+class DshRemoteSecrets implements remote.SecretStore {
+  DshRemoteSecrets(this._inner);
 
   final SecretStore _inner;
 

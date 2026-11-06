@@ -85,6 +85,7 @@ class HostSheet extends ConsumerWidget {
     final ssh = ref.watch(hostsProvider.select((s) => s.ssh));
     final account = ref.watch(relayAccountProvider).value;
     final relayHosts = account?.signedIn == true ? account!.hosts : const <RelayHost>[];
+    final lanHosts = ref.watch(lanHostsProvider).value ?? const <LocalPairedHost>[];
 
     Future<void> pick(HostRef host) async {
       if (host == active) {
@@ -144,6 +145,16 @@ class HostSheet extends ConsumerWidget {
                       relay: h,
                       onTap: () => pick(HostRef.relay(h.id, name: h.name)),
                     ),
+                  for (final h in lanHosts)
+                    _HostRow(
+                      host: HostRef.lan(h.hostDeviceId, name: h.name),
+                      title: h.name,
+                      subtitle: h.addresses.isEmpty
+                          ? l10n.remotePathLocalDirect
+                          : '${l10n.remotePathLocalDirect} · ${h.addresses.first}',
+                      active: active == HostRef.lan(h.hostDeviceId),
+                      onTap: () => pick(HostRef.lan(h.hostDeviceId, name: h.name)),
+                    ),
                 ],
               ),
               if (relayHosts.length > 1)
@@ -158,10 +169,14 @@ class HostSheet extends ConsumerWidget {
                 margin: const EdgeInsets.fromLTRB(SheetTitleBar.inset, 0, SheetTitleBar.inset, 12),
                 children: [
                   SettingsTile(
-                    icon: ssh.isEmpty && relayHosts.isEmpty ? AppIcons.add : AppIcons.configure,
+                    icon: ssh.isEmpty && relayHosts.isEmpty && lanHosts.isEmpty ? AppIcons.add : AppIcons.configure,
                     tinted: false,
-                    title: ssh.isEmpty && relayHosts.isEmpty ? l10n.remoteConnectComputer : l10n.remoteManageHosts,
-                    subtitle: ssh.isEmpty && relayHosts.isEmpty ? l10n.remoteConnectionMethods : null,
+                    title: ssh.isEmpty && relayHosts.isEmpty && lanHosts.isEmpty
+                        ? l10n.remoteConnectComputer
+                        : l10n.remoteManageHosts,
+                    subtitle: ssh.isEmpty && relayHosts.isEmpty && lanHosts.isEmpty
+                        ? l10n.remoteConnectionMethods
+                        : null,
                     onTap: () {
                       Navigator.of(context).pop();
                       onManage();

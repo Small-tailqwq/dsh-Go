@@ -167,6 +167,14 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="dshgo" />
             </intent-filter>
+            <!-- A LAN host's pairing QR code scanned with the camera (ds-harness-remote Local
+                 Direct). The app only pre-fills the pairing dialog; pairing needs a tap. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="dshremote" android:host="local-pair" />
+            </intent-filter>
             <!-- Opened from a file manager / chat app. (Shared ones come through ShareActivity:
                  one share target, not two.) -->
             <intent-filter>

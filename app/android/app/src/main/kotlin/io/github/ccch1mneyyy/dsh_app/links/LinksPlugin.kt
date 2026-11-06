@@ -98,7 +98,7 @@ class LinksPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCallHandle
             Intent.ACTION_VIEW -> {
                 val data = intent.data ?: return false
                 when (data.scheme?.lowercase()) {
-                    SCHEME, "https", "http" -> deliver(mapOf("uri" to data.toString()))
+                    SCHEME, LAN_PAIR_SCHEME, "https", "http" -> deliver(mapOf("uri" to data.toString()))
                     "content", "file" -> copyThenDeliver(data)
                     else -> return false
                 }
@@ -179,6 +179,9 @@ class LinksPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCallHandle
     companion object {
         const val CHANNEL = "dsh/links"
         const val SCHEME = "dshgo"
+
+        /** ds-harness-remote Local Direct pairing QR codes (`dshremote://local-pair?…`). */
+        const val LAN_PAIR_SCHEME = "dshremote"
         private const val EXTRA_TAKEN = "io.github.ccch1mneyyy.dsh_app.links.TAKEN"
         private const val MAX_FILE_BYTES = 4L * 1024 * 1024
         private const val KEEP_FILES = 6

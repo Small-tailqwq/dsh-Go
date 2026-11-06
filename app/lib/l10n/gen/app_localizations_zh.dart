@@ -13527,6 +13527,86 @@ class L10nZh extends L10n {
   String get searchKwRemoteCompactHistory => '精简 简洁 历史 工具 传输 流量 远程 compact slim lite';
 
   @override
+  String get remoteLanHosts => '局域网主机';
+
+  @override
+  String get remoteLanFooter => '同一 Wi-Fi 或 WireGuard、Tailscale 组网下直连，不经过任何服务器';
+
+  @override
+  String get remoteLanAdd => '配对局域网主机';
+
+  @override
+  String get remoteLanPairHelp => '在电脑上运行 ds-harness-remote local pair，用手机相机扫描二维码，或把配对链接粘贴到这里';
+
+  @override
+  String get remoteLanPairLinkLabel => '配对链接';
+
+  @override
+  String get remoteLanPair => '配对';
+
+  @override
+  String remoteLanPaired(String name) {
+    return '已配对「$name」';
+  }
+
+  @override
+  String get remoteLanAddresses => '地址';
+
+  @override
+  String get remoteLanAddressesHint => '每行一个，如 192.168.1.10:47821';
+
+  @override
+  String get remoteLanForget => '移除';
+
+  @override
+  String remoteLanForgetTitle(String name) {
+    return '移除「$name」？';
+  }
+
+  @override
+  String get remoteLanForgetBody => '之后要用需重新扫码配对；电脑上的配对记录可用 ds-harness-remote local revoke 撤销。';
+
+  @override
+  String get remoteLanErrInvalidLink => '不是有效的配对链接';
+
+  @override
+  String get remoteLanErrPairingClosed => '电脑上的配对已过期，请重新运行 local pair';
+
+  @override
+  String get remoteLanErrPairingRejected => '配对码不对或已用过，请在电脑上重新出码';
+
+  @override
+  String get remoteLanErrNotPaired => '这台电脑已撤销本机的配对，请重新配对';
+
+  @override
+  String get remoteLanErrIdentityChanged => '这台电脑的身份密钥和配对时不一致';
+
+  @override
+  String get remoteLanErrUnreachable => '连不上这台电脑：确认在同一网络、已开启局域网直连';
+
+  @override
+  String get remoteLanErrAddress => '地址需是私有网络 IP，如 192.168.1.10:47821';
+
+  @override
+  String get remotePathLocalDirect => '局域网直连';
+
+  @override
+  String stateHostLanLabel(String name) {
+    return '$name · 局域网';
+  }
+
+  @override
+  String get searchKwPairLanHost => '局域网,配对,扫码,二维码,直连,WireGuard,Tailscale';
+
+  @override
+  String remoteLanFingerprint(String fingerprint) {
+    return '指纹 $fingerprint';
+  }
+
+  @override
+  String get remoteLanCheckFingerprint => '核对与电脑上 local pair 显示的指纹一致后再配对';
+
+  @override
   String get stateWorkspaceFilesHint => '已上传到当前工作区的文件：';
 
   @override

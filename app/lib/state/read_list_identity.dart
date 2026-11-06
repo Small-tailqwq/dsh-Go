@@ -244,5 +244,15 @@ final readListIdentityProvider = Provider<ReadListIdentity?>((ref) {
         host.harnessVersion,
         epoch,
       ]);
+    case HostKind.lan:
+      final hosts = ref.watch(lanHostsProvider);
+      if (hosts.isLoading || hosts.hasError) return null;
+      LocalPairedHost? host;
+      for (final h in hosts.value ?? const <LocalPairedHost>[]) {
+        if (h.hostDeviceId == selected.id) host = h;
+      }
+      if (host == null || host.hostDeviceId.length > 256) return null;
+      // The pinned key is the Host's identity: a re-paired Host is another cache.
+      return ReadListIdentity.of(['lan', host.hostDeviceId, host.hostIdentityKey, host.pairingId, epoch]);
   }
 });

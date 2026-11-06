@@ -143,6 +143,22 @@ There is no extra client-side 20 MiB cap. The carrier enforces the protocol's ab
 
 Protocol reference: [ds-harness-remote 0.6.2, `479b943`](https://github.com/liguobao/ds-harness-remote/blob/479b94341c0d0de63846f21d0fcca26997d158d1/docs/protocol.md#L1529-L1618), MIT.
 
+### `LocalDirectClient`: no Server, no account (experimental)
+
+ds-harness-remote's Local Direct (protocol.md, "Local Direct"; upstream branch `feat/local-direct`, not released yet): a Host with `local.enabled: true` listens on its private-network addresses, and a Client paired by QR code connects straight to `ws://<addr>/dsh-remote/local/v1`. Text frames are control JSON (`local.hello` → `local.hello.ack` → `secure.handshake` ×2), binary frames are Noise ciphertext; above that, the secure channel, RPC and carrier are the same as for an account connection.
+
+```dart
+final local = LocalDirectClient(secrets: secrets, deviceName: 'Pixel 9');
+final host = await local.pair(LocalPairingLink.parse(scannedText)); // dshremote://local-pair?…
+final client = await local.connectHost(host.hostDeviceId);          // later: remembered addresses
+```
+
+- Pairing requires the Host key from the link in `local.hello.ack`, then sends `local.pair.prove` (`HMAC-SHA256(code, label || handshakeHash)`; the code never leaves the phone) as the first encrypted message and waits for `local.pair.ok`.
+- Links accept only private-network IP literals with a port (RFC 1918, link-local, CGNAT/Tailscale, IPv6 ULA/link-local, loopback) and refuse unknown or repeated fields.
+- Remembered addresses are tried in order, 3 s each for the socket and the ack; the one that works moves first. A different device answering on an old address moves on to the next one.
+- The Local identity and paired Hosts (`hostDeviceId`, pinned key, name, addresses) live under `dsh_remote.v1.local.*`, separate from every account identity: a Host refuses a device id its account trust store already knows.
+- `test/fixtures/local-noise-ik.json` is upstream's `fixtures/crypto/local-v1/noise-ik.json`; `test/local_direct_test.dart` reproduces it byte for byte, including the handshake hash and the pairing proof.
+
 ## Security model
 
 - The device identity (X25519) and tokens live only in `SecretStore`, under keys `dsh_remote.v1.<sha256(origin)[:24]>.{identity,credentials,pins}`. Passwords and web tokens are never stored or logged, and tracers redact tokens, Relay tickets and ciphertext. A Relay ticket is sent only on the node's data socket, never on the Control socket.

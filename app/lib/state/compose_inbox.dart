@@ -188,7 +188,7 @@ final readyComposeProvider = Provider<ComposeRequest?>((ref) {
 /// The active host can stage attachments or publish into its workspace.
 /// Remote workspace uploads require a capability from the live connection.
 bool canStageFiles(HostConnection? connection, HostRef host) =>
-    connection?.client.supportsFileUpload ?? host.kind != HostKind.relay;
+    connection?.client.supportsFileUpload ?? !host.kind.viaRemoteTunnel;
 
 /// The composer after a fill.
 class MergedDraft {

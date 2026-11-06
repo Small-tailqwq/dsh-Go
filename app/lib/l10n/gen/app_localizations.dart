@@ -24728,6 +24728,150 @@ abstract class L10n {
   /// **'精简 简洁 历史 工具 传输 流量 远程 compact slim lite'**
   String get searchKwRemoteCompactHistory;
 
+  /// No description provided for @remoteLanHosts.
+  ///
+  /// In zh, this message translates to:
+  /// **'局域网主机'**
+  String get remoteLanHosts;
+
+  /// No description provided for @remoteLanFooter.
+  ///
+  /// In zh, this message translates to:
+  /// **'同一 Wi-Fi 或 WireGuard、Tailscale 组网下直连，不经过任何服务器'**
+  String get remoteLanFooter;
+
+  /// No description provided for @remoteLanAdd.
+  ///
+  /// In zh, this message translates to:
+  /// **'配对局域网主机'**
+  String get remoteLanAdd;
+
+  /// No description provided for @remoteLanPairHelp.
+  ///
+  /// In zh, this message translates to:
+  /// **'在电脑上运行 ds-harness-remote local pair，用手机相机扫描二维码，或把配对链接粘贴到这里'**
+  String get remoteLanPairHelp;
+
+  /// No description provided for @remoteLanPairLinkLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'配对链接'**
+  String get remoteLanPairLinkLabel;
+
+  /// No description provided for @remoteLanPair.
+  ///
+  /// In zh, this message translates to:
+  /// **'配对'**
+  String get remoteLanPair;
+
+  /// No description provided for @remoteLanPaired.
+  ///
+  /// In zh, this message translates to:
+  /// **'已配对「{name}」'**
+  String remoteLanPaired(String name);
+
+  /// No description provided for @remoteLanAddresses.
+  ///
+  /// In zh, this message translates to:
+  /// **'地址'**
+  String get remoteLanAddresses;
+
+  /// No description provided for @remoteLanAddressesHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'每行一个，如 192.168.1.10:47821'**
+  String get remoteLanAddressesHint;
+
+  /// No description provided for @remoteLanForget.
+  ///
+  /// In zh, this message translates to:
+  /// **'移除'**
+  String get remoteLanForget;
+
+  /// No description provided for @remoteLanForgetTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'移除「{name}」？'**
+  String remoteLanForgetTitle(String name);
+
+  /// No description provided for @remoteLanForgetBody.
+  ///
+  /// In zh, this message translates to:
+  /// **'之后要用需重新扫码配对；电脑上的配对记录可用 ds-harness-remote local revoke 撤销。'**
+  String get remoteLanForgetBody;
+
+  /// No description provided for @remoteLanErrInvalidLink.
+  ///
+  /// In zh, this message translates to:
+  /// **'不是有效的配对链接'**
+  String get remoteLanErrInvalidLink;
+
+  /// No description provided for @remoteLanErrPairingClosed.
+  ///
+  /// In zh, this message translates to:
+  /// **'电脑上的配对已过期，请重新运行 local pair'**
+  String get remoteLanErrPairingClosed;
+
+  /// No description provided for @remoteLanErrPairingRejected.
+  ///
+  /// In zh, this message translates to:
+  /// **'配对码不对或已用过，请在电脑上重新出码'**
+  String get remoteLanErrPairingRejected;
+
+  /// No description provided for @remoteLanErrNotPaired.
+  ///
+  /// In zh, this message translates to:
+  /// **'这台电脑已撤销本机的配对，请重新配对'**
+  String get remoteLanErrNotPaired;
+
+  /// No description provided for @remoteLanErrIdentityChanged.
+  ///
+  /// In zh, this message translates to:
+  /// **'这台电脑的身份密钥和配对时不一致'**
+  String get remoteLanErrIdentityChanged;
+
+  /// No description provided for @remoteLanErrUnreachable.
+  ///
+  /// In zh, this message translates to:
+  /// **'连不上这台电脑：确认在同一网络、已开启局域网直连'**
+  String get remoteLanErrUnreachable;
+
+  /// No description provided for @remoteLanErrAddress.
+  ///
+  /// In zh, this message translates to:
+  /// **'地址需是私有网络 IP，如 192.168.1.10:47821'**
+  String get remoteLanErrAddress;
+
+  /// No description provided for @remotePathLocalDirect.
+  ///
+  /// In zh, this message translates to:
+  /// **'局域网直连'**
+  String get remotePathLocalDirect;
+
+  /// No description provided for @stateHostLanLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'{name} · 局域网'**
+  String stateHostLanLabel(String name);
+
+  /// No description provided for @searchKwPairLanHost.
+  ///
+  /// In zh, this message translates to:
+  /// **'局域网,配对,扫码,二维码,直连,WireGuard,Tailscale'**
+  String get searchKwPairLanHost;
+
+  /// No description provided for @remoteLanFingerprint.
+  ///
+  /// In zh, this message translates to:
+  /// **'指纹 {fingerprint}'**
+  String remoteLanFingerprint(String fingerprint);
+
+  /// No description provided for @remoteLanCheckFingerprint.
+  ///
+  /// In zh, this message translates to:
+  /// **'核对与电脑上 local pair 显示的指纹一致后再配对'**
+  String get remoteLanCheckFingerprint;
+
   /// No description provided for @stateWorkspaceFilesHint.
   ///
   /// In zh, this message translates to:

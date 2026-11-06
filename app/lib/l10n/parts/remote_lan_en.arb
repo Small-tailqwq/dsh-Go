@@ -1,0 +1,54 @@
+{
+  "remoteLanHosts": "LAN hosts",
+  "remoteLanFooter": "Connects directly on the same Wi-Fi or a WireGuard / Tailscale network, through no server",
+  "remoteLanAdd": "Pair a LAN host",
+  "remoteLanPairHelp": "Run ds-harness-remote local pair on the computer, then scan the QR code with the phone camera or paste the pairing link here",
+  "remoteLanPairLinkLabel": "Pairing link",
+  "remoteLanPair": "Pair",
+  "remoteLanPaired": "Paired with “{name}”",
+  "@remoteLanPaired": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "remoteLanAddresses": "Addresses",
+  "remoteLanAddressesHint": "One per line, e.g. 192.168.1.10:47821",
+  "remoteLanForget": "Remove",
+  "remoteLanForgetTitle": "Remove “{name}”?",
+  "@remoteLanForgetTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "remoteLanForgetBody": "Using it again needs a new pairing. Revoke this phone on the computer with ds-harness-remote local revoke.",
+  "remoteLanErrInvalidLink": "Not a valid pairing link",
+  "remoteLanErrPairingClosed": "Pairing on the computer has expired; run local pair again",
+  "remoteLanErrPairingRejected": "The pairing code is wrong or already used; make a new one on the computer",
+  "remoteLanErrNotPaired": "The computer revoked this phone's pairing; pair again",
+  "remoteLanErrIdentityChanged": "The computer's identity key differs from the one paired with",
+  "remoteLanErrUnreachable": "Can't reach the computer: check that both are on the same network and LAN direct is on",
+  "remoteLanErrAddress": "Use a private-network IP, e.g. 192.168.1.10:47821",
+  "remotePathLocalDirect": "LAN direct",
+  "stateHostLanLabel": "{name} · LAN",
+  "@stateHostLanLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "searchKwPairLanHost": "lan,pair,qr code,scan,direct,wireguard,tailscale",
+  "remoteLanFingerprint": "Fingerprint {fingerprint}",
+  "@remoteLanFingerprint": {
+    "placeholders": {
+      "fingerprint": {
+        "type": "String"
+      }
+    }
+  },
+  "remoteLanCheckFingerprint": "Pair only if this matches the fingerprint local pair shows on the computer"
+}

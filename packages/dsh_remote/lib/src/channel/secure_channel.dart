@@ -55,6 +55,7 @@ class SecureChannel {
     required String hostDeviceId,
     required String hostIdentityKey,
     Duration timeout = const Duration(seconds: 10),
+    List<int>? prologue,
   }) async {
     final info = transport.info;
     if (info.localDeviceId != clientDeviceId || info.remoteDeviceId != hostDeviceId) {
@@ -72,7 +73,8 @@ class SecureChannel {
         localPrivateKey: clientPrivateKey,
         localPublicKey: clientPublicKey,
         remotePublicKey: hostIdentityKey,
-        prologue: createNoisePrologue(info.connectionId, hostDeviceId, clientDeviceId),
+        // Local Direct binds its own label; the default is the account prologue.
+        prologue: prologue ?? createNoisePrologue(info.connectionId, hostDeviceId, clientDeviceId),
       );
     } on NoiseSessionError catch (error) {
       await transport.close();
@@ -90,6 +92,7 @@ class SecureChannel {
   Completer<void>? _handshakeDone;
   void Function(Uint8List message)? _onMessage;
   void Function(SecureChannelClosed reason)? _onClosed;
+  Completer<Uint8List>? _taking;
   final List<Uint8List> _backlog = [];
   SecureChannelClosed? _closedReason;
   bool _closed = false;
@@ -100,6 +103,9 @@ class SecureChannel {
   RemoteConnectionInfo get info => _transport.info;
 
   bool get isClosed => _closed;
+
+  /// Noise handshake hash of this channel (see [NoiseIkSession.handshakeHash]).
+  Uint8List get handshakeHash => _noise.handshakeHash;
 
   SecureChannelClosed? get closedReason => _closedReason;
 
@@ -161,7 +167,11 @@ class SecureChannel {
       final message = _incoming.decode(_noise.decrypt(ciphertext));
       if (message == null) return;
       final handler = _onMessage;
-      if (handler == null) {
+      final taking = _taking;
+      if (handler == null && taking != null) {
+        _taking = null;
+        taking.complete(message);
+      } else if (handler == null) {
         _backlog.add(message);
       } else {
         handler(message);
@@ -177,6 +187,28 @@ class SecureChannel {
       done.completeError(SecureChannelException(reason.code, reason.message, retryable: reason.retryable));
     }
     _fail(SecureChannelClosed(reason.code, reason.message, retryable: reason.retryable));
+  }
+
+  /// Receives the next message before [listen] is called (Local Direct
+  /// pairing reads `local.pair.ok` this way). Fails when the channel closes
+  /// or nothing arrives within [timeout]; a timeout closes the channel.
+  Future<Uint8List> takeMessage({Duration timeout = const Duration(seconds: 10)}) {
+    if (_onMessage != null || _taking != null) throw StateError('The secure channel already has a receiver.');
+    if (_backlog.isNotEmpty) return Future.value(_backlog.removeAt(0));
+    final reason = _closedReason;
+    if (reason != null) {
+      return Future.error(SecureChannelException(reason.code, reason.message, retryable: reason.retryable));
+    }
+    final taking = _taking = Completer<Uint8List>();
+    return taking.future.timeout(
+      timeout,
+      onTimeout: () {
+        if (identical(_taking, taking)) _taking = null;
+        const closed = SecureChannelClosed('SECURE_CHANNEL_FAILED', 'The Host did not answer in time.');
+        _fail(closed);
+        throw SecureChannelException(closed.code, closed.message);
+      },
+    );
   }
 
   /// Registers the receiver. Messages decrypted earlier are delivered now.
@@ -231,6 +263,9 @@ class SecureChannel {
     if (_closed) return;
     _closed = true;
     _closedReason = reason;
+    final taking = _taking;
+    _taking = null;
+    taking?.completeError(SecureChannelException(reason.code, reason.message, retryable: reason.retryable));
     _noise.destroy();
     _incoming.reset();
     _outgoing.reset();

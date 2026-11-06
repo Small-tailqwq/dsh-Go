@@ -61,7 +61,8 @@ class _RemoteNetworkDetailsSheetState extends ConsumerState<RemoteNetworkDetails
     final colors = DshColors.of(context);
     final status = ref.watch(hostLinkStatusProvider(widget.host)).value ?? HostLinkStatus.idle;
     final name = ref.watch(hostNameProvider(widget.host)) ?? l10n.commonRemoteHost;
-    final relay = widget.host.kind == HostKind.relay;
+    final relay = widget.host.kind.viaRemoteTunnel;
+    final lan = widget.host.kind == HostKind.lan;
     final connected = status.isConnected;
     final network = connected && relay ? status.network : null;
     final path = connected && relay ? network?.path ?? status.path : null;
@@ -88,7 +89,9 @@ class _RemoteNetworkDetailsSheetState extends ConsumerState<RemoteNetworkDetails
             Padding(
               padding: const EdgeInsets.fromLTRB(kSheetGutter, 0, kSheetGutter, 12),
               child: Text(
-                relay
+                lan
+                    ? l10n.remoteLanFooter
+                    : relay
                     ? '${l10n.remoteNetworkAutomatic}\n${l10n.remoteNetworkSnapshotHint}'
                     : l10n.hostDetailsSshNetworkHint,
                 style: TextStyle(color: colors.textTertiary),
@@ -97,7 +100,14 @@ class _RemoteNetworkDetailsSheetState extends ConsumerState<RemoteNetworkDetails
             SheetGroup(
               children: [
                 _NetworkValue(label: l10n.remoteHost, value: name),
-                _NetworkValue(label: l10n.hostDetailsConnectionType, value: relay ? 'DSH Remote' : 'SSH'),
+                _NetworkValue(
+                  label: l10n.hostDetailsConnectionType,
+                  value: lan
+                      ? l10n.remotePathLocalDirect
+                      : relay
+                      ? 'DSH Remote'
+                      : 'SSH',
+                ),
                 _NetworkValue(label: l10n.commonStatus, value: status.summary),
                 _NetworkValue(
                   label: l10n.remoteNetworkCurrentPath,
@@ -107,7 +117,7 @@ class _RemoteNetworkDetailsSheetState extends ConsumerState<RemoteNetworkDetails
                 ),
                 _NetworkValue(label: l10n.remoteNetworkConnectDuration, value: timing(network?.connectDuration)),
                 _NetworkValue(label: l10n.remoteNetworkRoundTripTime, value: timing(network?.roundTripTime)),
-                if (relay && connected && path != null && path != RelayPath.relay) ...[
+                if (relay && !lan && connected && path != null && path != RelayPath.relay) ...[
                   _NetworkValue(label: l10n.remoteNetworkLocalIpVersion, value: ipVersion(network?.localIpVersion)),
                   _NetworkValue(label: l10n.remoteNetworkRemoteIpVersion, value: ipVersion(network?.remoteIpVersion)),
                   _NetworkValue(

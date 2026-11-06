@@ -45,7 +45,7 @@ final dshWebAccessProvider = Provider.autoDispose<DshWebAccess>((ref) {
   switch (host.kind) {
     case HostKind.local:
       return const LocalDshWeb();
-    case HostKind.relay:
+    case HostKind.relay || HostKind.lan:
       return NoDshWeb(appL10n.webRelayUnavailable);
     case HostKind.ssh:
       // Rebuild once the link connects (or reconnects to a new process).

@@ -950,7 +950,7 @@ class IdentityBar extends ConsumerWidget {
     final host = ref.watch(activeHostProvider);
     final name = ref.watch(hostNameProvider(host)) ?? (host.isLocal ? l10n.commonThisPhone : l10n.commonRemoteHost);
     final view = watchHostStatus(ref, host);
-    final link = host.kind == HostKind.relay ? ref.watch(hostLinkStatusProvider(host)).value : null;
+    final link = host.kind.viaRemoteTunnel ? ref.watch(hostLinkStatusProvider(host)).value : null;
     final path = link?.isConnected == true ? link?.network?.path ?? link?.path : null;
     final statusLabel = path == null ? view.label : path.label;
     final tint = hostKindTint(host.kind);

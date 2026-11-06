@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:dsh_remote/dsh_remote.dart' show LocalAddress, LocalPairedHost;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/l10n.dart';
+import '../remote/lan/lan_backend.dart';
 import '../remote/link_status.dart';
 import '../remote/relay/dsh_remote_backend.dart';
 import 'app_info.dart';
@@ -20,10 +22,23 @@ import 'read_list_epoch.dart';
 export '../remote/link_status.dart' show HostLinkStatus, HostLinkPhase, HostLinkStep, HostLinkError, HostLinkErrorKind;
 export '../remote/ssh/ssh_transport.dart' show PresentedHostKey;
 export '../remote/relay/relay_backend.dart' show RelayHost, RelayTrust, RelayUser;
+
+export 'package:dsh_remote/dsh_remote.dart' show LocalAddress, LocalPairedHost;
+
 export '../remote/ssh/ssh_host_config.dart';
 
-/// The three kinds of DSH host the app can talk to.
-enum HostKind { local, ssh, relay }
+/// The kinds of DSH host the app can talk to. [lan] is a Local Direct Host
+/// (paired by QR code, reached over a private network without a Server).
+enum HostKind {
+  local,
+  ssh,
+  relay,
+  lan;
+
+  /// Reached through a ds-harness-remote tunnel (DSH Remote or Local
+  /// Direct): the same carrier limits, no DSH Web.
+  bool get viaRemoteTunnel => this == relay || this == lan;
+}
 
 /// Identifies a host: the on-device engine, a saved SSH host, or a relay
 /// (ds-harness-remote) device. Equality is by kind + id; [name] is only a
@@ -36,6 +51,8 @@ class HostRef {
   const HostRef.ssh(String id) : this._(HostKind.ssh, id);
 
   const HostRef.relay(String id, {String? name}) : this._(HostKind.relay, id, name);
+
+  const HostRef.lan(String id, {String? name}) : this._(HostKind.lan, id, name);
 
   final HostKind kind;
   final String id;
@@ -56,6 +73,7 @@ class HostRef {
       return switch (map['kind']) {
         'ssh' => HostRef.ssh(id),
         'relay' => HostRef.relay(id, name: name is String ? name : null),
+        'lan' => HostRef.lan(id, name: name is String ? name : null),
         _ => local,
       };
     } catch (_) {
@@ -78,6 +96,7 @@ String hostLabel(HostKind kind, String? name) => switch (kind) {
   HostKind.local => appL10n.commonThisPhone,
   HostKind.ssh => '${_short(name ?? appL10n.stateSshHost)} · SSH',
   HostKind.relay => appL10n.stateHostRemoteLabel(_short(name ?? appL10n.commonRemoteHost)),
+  HostKind.lan => appL10n.stateHostLanLabel(_short(name ?? appL10n.commonRemoteHost)),
 };
 
 String _short(String name) {
@@ -682,3 +701,71 @@ class RelayAccountController extends AsyncNotifier<RelayAccountState> {
 final relayAccountProvider = AsyncNotifierProvider<RelayAccountController, RelayAccountState>(
   RelayAccountController.new,
 );
+
+// ── Local Direct (局域网主机) ────────────────────────────────────────────────
+
+/// Local Direct client (`packages/dsh_remote`): identity and paired Hosts in
+/// the Keystore-backed [SecretStore], separate from the DSH Remote account.
+final lanBackendProvider = Provider<LanBackend>((ref) {
+  final backend = LanBackend(secrets: ref.watch(secretStoreProvider), clientVersion: AppInfo.version.split('+').first);
+  ref.listen<bool>(
+    remoteCompactHistoryProvider,
+    (_, enabled) => backend.compactHistory = enabled,
+    fireImmediately: true,
+  );
+  ref.onDispose(() => unawaited(backend.close()));
+  return backend;
+});
+
+/// Paired Local Direct Hosts, in pairing order.
+class LanHostsController extends AsyncNotifier<List<LocalPairedHost>> {
+  LanBackend get _backend => ref.read(lanBackendProvider);
+
+  @override
+  Future<List<LocalPairedHost>> build() async {
+    final backend = ref.watch(lanBackendProvider);
+    try {
+      return await backend.pairedHosts();
+    } catch (_) {
+      // Unreadable secrets (or no Keystore, in tests): nothing paired.
+      return const [];
+    }
+  }
+
+  LocalPairedHost? byId(String id) {
+    for (final h in state.value ?? const <LocalPairedHost>[]) {
+      if (h.hostDeviceId == id) return h;
+    }
+    return null;
+  }
+
+  /// Pairs with the Host of [link] (`dshremote://local-pair?…`). Throws
+  /// [HostLinkError].
+  Future<LocalPairedHost> pair(String link) async {
+    ref.read(readListCredentialEpochProvider.notifier).advance();
+    final paired = await _backend.pair(link);
+    await _reload();
+    return paired;
+  }
+
+  /// Replaces the remembered addresses (manual entry). Throws [HostLinkError].
+  Future<void> setAddresses(String id, List<LocalAddress> addresses) async {
+    await _backend.setAddresses(id, addresses);
+    await _reload();
+  }
+
+  /// Forgets the Host; switches back to 本机 if it was active.
+  Future<void> forget(String id) async {
+    ref.read(readListCredentialEpochProvider.notifier).advance();
+    await ref.read(activeHostProvider.notifier).forget((h) => h == HostRef.lan(id));
+    await _backend.forget(id);
+    await _reload();
+  }
+
+  Future<void> _reload() async {
+    final hosts = await _backend.pairedHosts();
+    if (ref.mounted) state = AsyncData(hosts);
+  }
+}
+
+final lanHostsProvider = AsyncNotifierProvider<LanHostsController, List<LocalPairedHost>>(LanHostsController.new);

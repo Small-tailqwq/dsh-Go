@@ -50,6 +50,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../state/sessions_state.dart' show currentSessionProvider;
 import '../ui/share_hosted/hosted_link_host.dart' show registerHostedLinks;
+import 'lan_pair_links.dart' show lanPairLinkScheme, registerLanPairLinks;
 import 'page_links.dart' show pageLinkResolverProvider, registerPageLinks;
 import 'plugin_links.dart' show registerPluginLinks;
 
@@ -274,7 +275,7 @@ class LinkRouter {
 
   LinkHandler? _handlerFor(Uri uri) {
     switch (uri.scheme.toLowerCase()) {
-      case appLinkScheme || 'https' || 'http':
+      case appLinkScheme || 'https' || 'http' || lanPairLinkScheme:
         for (final route in _routes) {
           if (route.matches(uri)) return route.handle;
         }
@@ -290,7 +291,7 @@ class LinkRouter {
   }
 
   static bool _canWait(Uri uri) => switch (uri.scheme.toLowerCase()) {
-    appLinkScheme || 'https' || 'http' || 'file' => true,
+    appLinkScheme || 'https' || 'http' || 'file' || lanPairLinkScheme => true,
     _ => false,
   };
 
@@ -343,6 +344,7 @@ class _LinkHostState extends ConsumerState<LinkHost> {
   late final VoidCallback _offHosted;
   late final VoidCallback _offPlugins;
   late final VoidCallback _offPages;
+  late final VoidCallback _offLanPair;
 
   @override
   void initState() {
@@ -358,6 +360,8 @@ class _LinkHostState extends ConsumerState<LinkHost> {
       session: () => ref.read(currentSessionProvider),
       page: ref.read(pageLinkResolverProvider),
     );
+    // `dshremote://local-pair?…`: a LAN host's pairing QR code.
+    _offLanPair = registerLanPairLinks(_router);
     // After the first frame: the home route is laid out before a sheet opens.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _router.attach(context, toast: _toast);
@@ -374,6 +378,7 @@ class _LinkHostState extends ConsumerState<LinkHost> {
     _offHosted();
     _offPlugins();
     _offPages();
+    _offLanPair();
     _router.detach(context);
     super.dispose();
   }

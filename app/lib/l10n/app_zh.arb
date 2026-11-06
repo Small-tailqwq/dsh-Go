@@ -8579,6 +8579,58 @@
   "remoteErrHistoryModeChanged": "主机已不支持精简历史，请切换到其他主机后再连回来，或重启 App，重新加载历史",
   "remoteCompactHistoryHint": "支持的 DSH Remote 主机会精简历史工具详情，实时回复和审批不变。切换主机或重启 App 后生效；旧主机仍传输完整历史。",
   "searchKwRemoteCompactHistory": "精简 简洁 历史 工具 传输 流量 远程 compact slim lite",
+  "remoteLanHosts": "局域网主机",
+  "remoteLanFooter": "同一 Wi-Fi 或 WireGuard、Tailscale 组网下直连，不经过任何服务器",
+  "remoteLanAdd": "配对局域网主机",
+  "remoteLanPairHelp": "在电脑上运行 ds-harness-remote local pair，用手机相机扫描二维码，或把配对链接粘贴到这里",
+  "remoteLanPairLinkLabel": "配对链接",
+  "remoteLanPair": "配对",
+  "remoteLanPaired": "已配对「{name}」",
+  "@remoteLanPaired": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "remoteLanAddresses": "地址",
+  "remoteLanAddressesHint": "每行一个，如 192.168.1.10:47821",
+  "remoteLanForget": "移除",
+  "remoteLanForgetTitle": "移除「{name}」？",
+  "@remoteLanForgetTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "remoteLanForgetBody": "之后要用需重新扫码配对；电脑上的配对记录可用 ds-harness-remote local revoke 撤销。",
+  "remoteLanErrInvalidLink": "不是有效的配对链接",
+  "remoteLanErrPairingClosed": "电脑上的配对已过期，请重新运行 local pair",
+  "remoteLanErrPairingRejected": "配对码不对或已用过，请在电脑上重新出码",
+  "remoteLanErrNotPaired": "这台电脑已撤销本机的配对，请重新配对",
+  "remoteLanErrIdentityChanged": "这台电脑的身份密钥和配对时不一致",
+  "remoteLanErrUnreachable": "连不上这台电脑：确认在同一网络、已开启局域网直连",
+  "remoteLanErrAddress": "地址需是私有网络 IP，如 192.168.1.10:47821",
+  "remotePathLocalDirect": "局域网直连",
+  "stateHostLanLabel": "{name} · 局域网",
+  "@stateHostLanLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "searchKwPairLanHost": "局域网,配对,扫码,二维码,直连,WireGuard,Tailscale",
+  "remoteLanFingerprint": "指纹 {fingerprint}",
+  "@remoteLanFingerprint": {
+    "placeholders": {
+      "fingerprint": {
+        "type": "String"
+      }
+    }
+  },
+  "remoteLanCheckFingerprint": "核对与电脑上 local pair 显示的指纹一致后再配对",
   "stateWorkspaceFilesHint": "已上传到当前工作区的文件：",
   "stateRemoteUploadNameInvalid": "文件名不受主机支持，请去掉特殊字符或缩短后再试",
   "stateRemoteUploadWorkspaceUnavailable": "当前对话没有可写的工作目录",

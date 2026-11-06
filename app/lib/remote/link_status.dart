@@ -69,7 +69,10 @@ enum RelayPath {
   p2p,
   direct,
   turn,
-  relay;
+  relay,
+
+  /// Local Direct: a paired Host on the same private network, no Server.
+  localDirect;
 
   String get label => switch (this) {
     RelayPath.lan => appL10n.remotePathLan,
@@ -77,6 +80,7 @@ enum RelayPath {
     RelayPath.direct => appL10n.remotePathDirect,
     RelayPath.turn => appL10n.remotePathTurn,
     RelayPath.relay => appL10n.remotePathRelay,
+    RelayPath.localDirect => appL10n.remotePathLocalDirect,
   };
 }
 

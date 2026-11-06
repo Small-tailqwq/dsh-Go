@@ -10,6 +10,8 @@
 ///   login, device registration, token refresh, Host directory.
 /// * [RelayTransport] — Control WebSocket: hello, connect, relay frames,
 ///   ping/pong, WebRTC signaling.
+/// * [LocalTransport] / [LocalDirectClient] — Local Direct: a paired Host
+///   reached straight over a private network, no Server or account.
 /// * [WebRtcTransport] — LAN / P2P / TURN: Noise ciphertext over a
 ///   DataChannel of a platform [RemotePeerConnection] (flutter_webrtc in the
 ///   app), falling back to the Relay.
@@ -35,14 +37,25 @@ export 'src/crypto/noise_ik.dart'
         NoiseSessionError,
         X25519KeyPair,
         createNoisePrologue,
+        createLocalNoisePrologue,
         formatFingerprint,
         identityFingerprint,
         noiseIkProtocol;
+export 'src/local/local_direct.dart' show LocalDirectClient, LocalPairedHost;
+export 'src/local/local_protocol.dart'
+    show
+        LocalAddress,
+        LocalPairingLink,
+        createLocalPairingProof,
+        isPrivateNetworkAddress,
+        localDirectDefaultPort,
+        localDirectPath;
 export 'src/protocol/control.dart' show ControlFrame, ControlFrameLimits, ProtocolError, protocolVersion;
 export 'src/protocol/messages.dart' show RemoteMessage, SecureMessageCodec, maxSecureMessageBytes;
 export 'src/server/server_api.dart';
 export 'src/state.dart';
 export 'src/transport/peer_connection.dart';
+export 'src/transport/local_transport.dart' show LocalSocketConnector, LocalTransport;
 export 'src/transport/relay_transport.dart';
 export 'src/transport/transport.dart';
 export 'src/transport/webrtc_transport.dart';
